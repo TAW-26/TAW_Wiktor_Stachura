@@ -52,4 +52,4 @@ npm run dev
 ![Diagram ERD](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/develop/docs/erd.png?raw=true)
 
 **Przypadki użycia:**
-[Use Cases Documentation](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/develop/docs/use_cases.md)
+[Use Cases Documentation](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/feature/issue-6-use-cases/docs/use_cases.md)
