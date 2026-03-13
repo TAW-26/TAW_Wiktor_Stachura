@@ -47,9 +47,9 @@ npm run dev
 
 ## Dokumentacja
 
-**Diagram bazy danych:
+**Diagram bazy danych:**
 
-![Diagram ERD](https://github.com/TAW-26/taw-wiktor-stachura/blob/develop/docs/erd.png?raw=true)
+![Diagram ERD](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/develop/docs/erd.png?raw=true)
 
-**Przypadki użycia:
-[Use Cases Documentation](https://github.com/TAW-26/taw-wiktor-stachura/blob/develop/docs/use_cases.md)
+**Przypadki użycia:**
+[Use Cases Documentation](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/develop/docs/use_cases.md)
