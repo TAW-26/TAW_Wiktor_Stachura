@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# System rezerwacji boisk i obiektów sportowych
 
-First, run the development server:
+## Opis projektu
+
+Aplikacja webowa pozwalająca na przeglądanie dostępności i rezerwację lokalnych obiektów sportowych w wybranych przedziałach czasowych. Projekt ma na celu cyfryzację i automatyzację procesu wynajmu boisk z wdrożeniem bezpiecznego logowania oraz podziałem uprawnień (Użytkownik / Administrator).
+
+**Autor:** Wiktor Stachura
+
+## Użyte technologie
+
+* **Frontend:** Next.js (React.js, Tailwind CSS)
+* **Backend:** Next.js API Routes / Server Actions (Node.js)
+* **Baza danych:** SQLite + Prisma ORM
+* **Autoryzacja:** NextAuth.js / JWT
+
+## Instrukcja uruchomienia lokalnie
+
+1. **Sklonuj repozytorium:**
+
+   ```bash
+   git clone <adres-repozytorium>
+   cd <nazwa-folderu>
+   ```
+2. **Zainstaluj zależności:**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Skonfiguruj bazę danych (Prisma):**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Uruchom serwer deweloperski:**
 
-## Learn More
+```
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. **Otwórz aplikację:**
+   Przejdź w przeglądarce pod adres:[http://localhost:3000](https://www.google.com/url?sa=E&q=http%3A%2F%2Flocalhost%3A3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📚 Dokumentacja
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Diagram bazy danych: *wkrótce*.**
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Przypadki użycia: *wkrótce*.**
