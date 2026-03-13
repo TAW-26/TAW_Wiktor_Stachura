@@ -46,7 +46,7 @@ npm run dev
    Przejdź w przeglądarce pod adres:[http://localhost:3000]
 
 ## Dokumentacja
-![Dokumentacja](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/develop/docs/topic-selection.md)
+[Documentation](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/develop/docs/topic-selection.md)
 
 **Diagram bazy danych:**
 
