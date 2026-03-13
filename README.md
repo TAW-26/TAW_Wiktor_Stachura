@@ -19,8 +19,9 @@ Aplikacja webowa pozwalająca na przeglądanie dostępności i rezerwację lokal
 1. **Sklonuj repozytorium:**
 
    ```bash
-   git clone <adres-repozytorium>
-   cd <nazwa-folderu>
+   git clone [<adres-repozytorium>](https://github.com/TAW-26/TAW_Wiktor_Stachura.git)
+   mv TAW-WIKTOR-STACHURA taw-wiktor-stachura
+   cd taw-wiktor-stachura
    ```
 2. **Zainstaluj zależności:**
 
@@ -42,10 +43,13 @@ npm run dev
 ```
 
 5. **Otwórz aplikację:**
-   Przejdź w przeglądarce pod adres:[http://localhost:3000](https://www.google.com/url?sa=E&q=http%3A%2F%2Flocalhost%3A3000)
+   Przejdź w przeglądarce pod adres:[http://localhost:3000]
 
 ## Dokumentacja
 
-**Diagram bazy danych: *wkrótce*.**
+**Diagram bazy danych:**
 
-**Przypadki użycia: *wkrótce*.**
+![Diagram ERD](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/develop/docs/erd.png?raw=true)
+
+**Przypadki użycia:**
+[Use Cases Documentation](https://github.com/TAW-26/TAW_Wiktor_Stachura/blob/feature/issue-6-use-cases/docs/use_cases.md)
