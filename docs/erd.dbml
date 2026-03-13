@@ -1,0 +1,26 @@
+Table User {
+  id Int [pk, increment]
+  email String [unique, not null]
+  passwordHash String [not null]
+  role String [default: 'USER', note: 'USER lub ADMIN']
+  createdAt DateTime [default: `now()`]
+}
+
+Table Facility {
+  id Int [pk, increment]
+  name String [not null]
+  description String
+  openTime String [note: 'np. 08:00']
+  closeTime String [note: 'np. 22:00']
+  createdAt DateTime [default: `now()`]
+}
+
+Table Reservation {
+  id Int [pk, increment]
+  userId Int [ref: > User.id]
+  facilityId Int [ref: > Facility.id]
+  startTime DateTime [not null]
+  endTime DateTime [not null]
+  status String [default: 'ACTIVE', note: 'ACTIVE, CANCELLED']
+  createdAt DateTime [default: `now()`]
+}
