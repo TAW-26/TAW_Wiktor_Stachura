@@ -19,4 +19,4 @@ Cyfryzacja i automatyzacja procesu wynajmu boisk z wdrożeniem bezpiecznego logo
 
 * **Frontend:** Next.js (framework React.js).
 * **Backend:** Next.js API Routes (środowisko Node.js).
-* **Baza danych:** PostgreSQL.
+* **Baza danych:** Prisma SQLite.
