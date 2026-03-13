@@ -44,7 +44,7 @@ npm run dev
 5. **Otwórz aplikację:**
    Przejdź w przeglądarce pod adres:[http://localhost:3000](https://www.google.com/url?sa=E&q=http%3A%2F%2Flocalhost%3A3000)
 
-## 📚 Dokumentacja
+## Dokumentacja
 
 **Diagram bazy danych: *wkrótce*.**
 
