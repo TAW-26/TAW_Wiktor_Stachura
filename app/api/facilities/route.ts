@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/server/auth";
 import { createFacility, listFacilities } from "@/lib/server/facility-service";
 import { handleRouteError, parseJsonBody } from "@/lib/server/http";
 
@@ -20,6 +21,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    requireAdmin(request);
     const body = await parseJsonBody<CreateFacilityDto>(request);
     const facility = await createFacility(body);
     return NextResponse.json(facility, { status: 201 });

@@ -9,6 +9,16 @@ export const toIntId = (value: string): number => {
   return parsed;
 };
 
+export const toDate = (value: string, fieldName: string): Date => {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new DomainError(`Invalid date for field: ${fieldName}`, 400);
+  }
+
+  return parsed;
+};
+
 export const parseJsonBody = async <T>(request: Request): Promise<T> => {
   try {
     return (await request.json()) as T;

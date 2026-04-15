@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/server/auth";
 import {
   deleteFacility,
   getFacilityById,
@@ -22,6 +23,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
+    requireAdmin(request);
     const { id } = await context.params;
     const body = await parseJsonBody<{
       name?: string;
@@ -39,6 +41,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    requireAdmin(_request);
     const { id } = await context.params;
     await deleteFacility(toIntId(id));
     return new NextResponse(null, { status: 204 });
