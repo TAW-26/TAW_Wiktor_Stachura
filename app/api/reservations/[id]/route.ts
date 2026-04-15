@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/server/auth";
 import {
   cancelReservation,
   deleteReservation,
   getReservationById,
   updateReservationTime,
 } from "@/lib/server/reservation-service";
-import { handleRouteError, parseJsonBody, toIntId } from "@/lib/server/http";
+import { handleRouteError, parseJsonBody, toDate, toIntId } from "@/lib/server/http";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -13,8 +14,14 @@ type RouteContext = {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = requireAuth(_request);
     const { id } = await context.params;
     const reservation = await getReservationById(toIntId(id));
+
+    if (auth.role !== "ADMIN" && reservation.userId !== auth.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     return NextResponse.json(reservation, { status: 200 });
   } catch (error) {
     return handleRouteError(error);
@@ -23,13 +30,21 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
+    const auth = requireAuth(request);
     const { id } = await context.params;
+    const reservationId = toIntId(id);
+    const existingReservation = await getReservationById(reservationId);
+
+    if (auth.role !== "ADMIN" && existingReservation.userId !== auth.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await parseJsonBody<{ startTime: string; endTime: string }>(request);
 
     const reservation = await updateReservationTime(
-      toIntId(id),
-      new Date(body.startTime),
-      new Date(body.endTime),
+      reservationId,
+      toDate(body.startTime, "startTime"),
+      toDate(body.endTime, "endTime"),
     );
 
     return NextResponse.json(reservation, { status: 200 });
@@ -40,20 +55,22 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
+    const auth = requireAuth(request);
     const { id } = await context.params;
+    const reservationId = toIntId(id);
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get("mode");
 
     if (mode === "hard") {
-      await deleteReservation(toIntId(id));
+      if (auth.role !== "ADMIN") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      await deleteReservation(reservationId);
       return new NextResponse(null, { status: 204 });
     }
 
-    const role = searchParams.get("role") === "ADMIN" ? "ADMIN" : "USER";
-    const userIdRaw = searchParams.get("userId");
-    const userId = userIdRaw ? toIntId(userIdRaw) : undefined;
-
-    const reservation = await cancelReservation(toIntId(id), role, userId);
+    const reservation = await cancelReservation(reservationId, auth.role, auth.id);
     return NextResponse.json(reservation, { status: 200 });
   } catch (error) {
     return handleRouteError(error);

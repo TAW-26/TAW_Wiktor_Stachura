@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/server/auth";
 import {
   createReservation,
   listAllReservations,
   listUserReservations,
 } from "@/lib/server/reservation-service";
-import { handleRouteError, parseJsonBody, toIntId } from "@/lib/server/http";
+import { handleRouteError, parseJsonBody, toDate } from "@/lib/server/http";
 
 type CreateReservationDto = {
-  userId: number;
   facilityId: number;
   startTime: string;
   endTime: string;
@@ -15,15 +15,14 @@ type CreateReservationDto = {
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const auth = requireAuth(request);
 
-    if (userId) {
-      const reservations = await listUserReservations(toIntId(userId));
+    if (auth.role === "ADMIN") {
+      const reservations = await listAllReservations();
       return NextResponse.json(reservations, { status: 200 });
     }
 
-    const reservations = await listAllReservations();
+    const reservations = await listUserReservations(auth.id);
     return NextResponse.json(reservations, { status: 200 });
   } catch (error) {
     return handleRouteError(error);
@@ -32,13 +31,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = requireAuth(request);
     const body = await parseJsonBody<CreateReservationDto>(request);
 
     const reservation = await createReservation({
-      userId: body.userId,
+      userId: auth.id,
       facilityId: body.facilityId,
-      startTime: new Date(body.startTime),
-      endTime: new Date(body.endTime),
+      startTime: toDate(body.startTime, "startTime"),
+      endTime: toDate(body.endTime, "endTime"),
     });
 
     return NextResponse.json(reservation, { status: 201 });
