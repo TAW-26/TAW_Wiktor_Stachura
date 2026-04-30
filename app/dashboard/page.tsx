@@ -1,21 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LoadingSpinner from "@/app/components/ui/LoadingSpinner";
 import ErrorState from "@/app/components/ui/ErrorState";
 import EmptyState from "@/app/components/ui/EmptyState";
-
-type Reservation = {
-  id: number;
-  facilityId: number;
-  startTime: string;
-  endTime: string;
-  status: "ACTIVE" | "CANCELLED_BY_USER" | "CANCELLED_BY_ADMIN";
-  createdAt: string;
-  facility: { name: string };
-};
+import { useReservations } from "@/app/hooks/useReservations";
+import { ApiError, type Reservation } from "@/app/lib/api-client";
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("pl-PL", {
@@ -37,77 +29,36 @@ function formatDate(iso: string): string {
 
 function statusLabel(status: Reservation["status"]) {
   switch (status) {
-    case "ACTIVE":
-      return { label: "Aktywna", cls: "badge-active", icon: "✅" };
-    case "CANCELLED_BY_USER":
-      return { label: "Anulowana przez Ciebie", cls: "badge-cancelled", icon: "❌" };
-    case "CANCELLED_BY_ADMIN":
-      return { label: "Anulowana przez admina", cls: "badge-cancelled", icon: "❌" };
+    case "ACTIVE": return { label: "Aktywna", cls: "badge-active", icon: "✅" };
+    case "CANCELLED_BY_USER": return { label: "Anulowana przez Ciebie", cls: "badge-cancelled", icon: "❌" };
+    case "CANCELLED_BY_ADMIN": return { label: "Anulowana przez admina", cls: "badge-cancelled", icon: "❌" };
   }
 }
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  const { reservations, loading, error, refetch, cancelReservation } = useReservations();
 
   useEffect(() => {
     const stored = localStorage.getItem("sb_auth");
-    if (!stored) {
-      router.push("/login");
-      return;
-    }
+    if (!stored) { router.push("/login"); return; }
     const auth = JSON.parse(stored);
     setUserEmail(auth.email);
   }, [router]);
 
-  const fetchReservations = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem("sb_token");
-      if (!token) { router.push("/login"); return; }
-
-      const res = await fetch("/api/reservations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401) { router.push("/login"); return; }
-      if (!res.ok) throw new Error("Nie udało się pobrać rezerwacji.");
-
-      const data: Reservation[] = await res.json();
-      setReservations(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Błąd serwera.");
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
-
-  useEffect(() => {
-    if (userEmail) fetchReservations();
-  }, [userEmail, fetchReservations]);
-
   const handleCancel = async (id: number) => {
     if (!confirm("Czy na pewno chcesz anulować tę rezerwację?")) return;
     setCancellingId(id);
+    setCancelError(null);
     try {
-      const token = localStorage.getItem("sb_token");
-      const res = await fetch(`/api/reservations/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Nie udało się anulować rezerwacji.");
-      setReservations((prev) =>
-        prev.map((r) =>
-          r.id === id ? { ...r, status: "CANCELLED_BY_USER" } : r
-        )
-      );
+      await cancelReservation(id);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Błąd anulowania.");
+      const msg = err instanceof ApiError ? err.message : "Błąd anulowania.";
+      setCancelError(msg);
     } finally {
       setCancellingId(null);
     }
@@ -120,45 +71,36 @@ export default function DashboardPage() {
     <div className="section">
       <div className="container">
         {/* Header */}
-        <div
-          className="animate-fade-in"
-          style={{ marginBottom: "2.5rem" }}
-        >
+        <div className="animate-fade-in" style={{ marginBottom: "2.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
             <div
               style={{
-                width: 48,
-                height: 48,
+                width: 48, height: 48,
                 background: "linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan))",
                 borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "1.25rem",
-                fontWeight: 700,
-                color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "1.25rem", fontWeight: 700, color: "#fff",
               }}
             >
               {userEmail ? userEmail[0].toUpperCase() : "👤"}
             </div>
             <div>
               <h1 style={{ fontSize: "1.875rem" }}>Moje Rezerwacje</h1>
-              {userEmail && (
-                <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)" }}>{userEmail}</p>
-              )}
+              {userEmail && <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)" }}>{userEmail}</p>}
             </div>
           </div>
-          <p style={{ color: "var(--text-secondary)" }}>
-            Zarządzaj swoimi rezerwacjami obiektów sportowych.
-          </p>
+          <p style={{ color: "var(--text-secondary)" }}>Zarządzaj swoimi rezerwacjami obiektów sportowych.</p>
         </div>
 
-        {loading && <LoadingSpinner message="Ładowanie rezerwacji..." />}
-
-        {!loading && error && (
-          <ErrorState message={error} onRetry={fetchReservations} />
+        {cancelError && (
+          <div className="alert alert-error animate-fade-in-fast" style={{ marginBottom: "1.5rem" }}>
+            <span>⚠️</span><span>{cancelError}</span>
+          </div>
         )}
 
+        {/* States */}
+        {loading && <LoadingSpinner message="Ładowanie rezerwacji..." />}
+        {!loading && error && <ErrorState message={error} onRetry={refetch} />}
         {!loading && !error && reservations.length === 0 && (
           <EmptyState
             icon="📅"
@@ -174,34 +116,13 @@ export default function DashboardPage() {
             {/* Active */}
             {active.length > 0 && (
               <section className="animate-fade-in">
-                <h2
-                  style={{
-                    fontSize: "1.125rem",
-                    marginBottom: "1rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      background: "var(--status-active)",
-                      borderRadius: "50%",
-                      display: "inline-block",
-                    }}
-                  />
+                <h2 style={{ fontSize: "1.125rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ width: 8, height: 8, background: "var(--status-active)", borderRadius: "50%", display: "inline-block" }} />
                   Aktywne ({active.length})
                 </h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                   {active.map((r) => (
-                    <ReservationCard
-                      key={r.id}
-                      reservation={r}
-                      onCancel={handleCancel}
-                      cancelling={cancellingId === r.id}
-                    />
+                    <ReservationCard key={r.id} reservation={r} onCancel={handleCancel} cancelling={cancellingId === r.id} />
                   ))}
                 </div>
               </section>
@@ -210,25 +131,8 @@ export default function DashboardPage() {
             {/* Cancelled */}
             {cancelled.length > 0 && (
               <section className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                <h2
-                  style={{
-                    fontSize: "1.125rem",
-                    marginBottom: "1rem",
-                    color: "var(--text-secondary)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      background: "var(--text-muted)",
-                      borderRadius: "50%",
-                      display: "inline-block",
-                    }}
-                  />
+                <h2 style={{ fontSize: "1.125rem", marginBottom: "1rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ width: 8, height: 8, background: "var(--text-muted)", borderRadius: "50%", display: "inline-block" }} />
                   Historia ({cancelled.length})
                 </h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", opacity: 0.7 }}>
@@ -255,32 +159,20 @@ function ReservationCard({
   cancelling?: boolean;
 }) {
   const st = statusLabel(reservation.status);
-
   return (
     <div
       className="card"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "1rem",
-        flexWrap: "wrap",
-        padding: "1.25rem 1.5rem",
-      }}
+      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", padding: "1.25rem 1.5rem" }}
     >
       <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
         <div
           style={{
-            width: 44,
-            height: 44,
+            width: 44, height: 44,
             background: reservation.status === "ACTIVE" ? "var(--accent-emerald-glow)" : "rgba(255,255,255,0.04)",
             border: `1px solid ${reservation.status === "ACTIVE" ? "var(--border-accent)" : "var(--border-subtle)"}`,
             borderRadius: "var(--radius-md)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "1.25rem",
-            flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "1.25rem", flexShrink: 0,
           }}
         >
           🏟
@@ -302,17 +194,13 @@ function ReservationCard({
           </p>
         </div>
       </div>
-
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-        <span className={`badge ${st.cls}`}>
-          {st.icon} {st.label}
-        </span>
+        <span className={`badge ${st.cls}`}>{st.icon} {st.label}</span>
         {reservation.status === "ACTIVE" && onCancel && (
           <button
             className="btn btn-danger btn-sm"
             onClick={() => onCancel(reservation.id)}
             disabled={cancelling}
-            title="Anuluj rezerwację"
           >
             {cancelling ? "..." : "✕ Anuluj"}
           </button>
