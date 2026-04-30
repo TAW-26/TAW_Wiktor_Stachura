@@ -1,46 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import SkeletonCard from "@/app/components/ui/SkeletonCard";
 import ErrorState from "@/app/components/ui/ErrorState";
 import EmptyState from "@/app/components/ui/EmptyState";
-
-type Facility = {
-  id: number;
-  name: string;
-  description: string | null;
-  openTime: string;
-  closeTime: string;
-  createdAt: string;
-};
+import { useFacilities } from "@/app/hooks/useFacilities";
+import type { Facility } from "@/app/lib/api-client";
 
 export default function FacilitiesPage() {
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [filtered, setFiltered] = useState<Facility[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { facilities, loading, error, refetch } = useFacilities();
   const [search, setSearch] = useState("");
-
-  const fetchFacilities = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/facilities");
-      if (!res.ok) throw new Error("Nie udało się pobrać listy obiektów.");
-      const data: Facility[] = await res.json();
-      setFacilities(data);
-      setFiltered(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Błąd serwera.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchFacilities();
-  }, [fetchFacilities]);
+  const [filtered, setFiltered] = useState<Facility[]>([]);
 
   useEffect(() => {
     if (!search.trim()) {
@@ -82,7 +53,6 @@ export default function FacilitiesPage() {
             </p>
           </div>
 
-          {/* Search */}
           <div style={{ position: "relative", minWidth: 260 }}>
             <span
               style={{
@@ -108,7 +78,7 @@ export default function FacilitiesPage() {
           </div>
         </div>
 
-        {/* States */}
+        {/* Loading state — 6 skeleton cards */}
         {loading && (
           <div className="grid-cards animate-stagger">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -117,13 +87,12 @@ export default function FacilitiesPage() {
           </div>
         )}
 
+        {/* Error state */}
         {!loading && error && (
-          <ErrorState
-            message={error}
-            onRetry={fetchFacilities}
-          />
+          <ErrorState message={error} onRetry={refetch} />
         )}
 
+        {/* Empty state */}
         {!loading && !error && filtered.length === 0 && (
           <EmptyState
             icon="🏟"
@@ -136,6 +105,7 @@ export default function FacilitiesPage() {
           />
         )}
 
+        {/* Facilities grid */}
         {!loading && !error && filtered.length > 0 && (
           <>
             <p
@@ -145,9 +115,7 @@ export default function FacilitiesPage() {
                 marginBottom: "1.5rem",
               }}
             >
-              {filtered.length === 1
-                ? "1 obiekt"
-                : `${filtered.length} obiektów`}
+              {filtered.length === 1 ? "1 obiekt" : `${filtered.length} obiektów`}
               {search && ` pasujących do „${search}"`}
             </p>
             <div className="grid-cards animate-stagger">
@@ -165,7 +133,6 @@ export default function FacilitiesPage() {
 function FacilityCard({ facility }: { facility: Facility }) {
   return (
     <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-      {/* Icon + Name */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem" }}>
         <div
           style={{
@@ -200,7 +167,6 @@ function FacilityCard({ facility }: { facility: Facility }) {
         </div>
       </div>
 
-      {/* Description */}
       {facility.description && (
         <p
           style={{
@@ -217,7 +183,6 @@ function FacilityCard({ facility }: { facility: Facility }) {
         </p>
       )}
 
-      {/* Divider + Action */}
       <div
         style={{
           paddingTop: "0.75rem",

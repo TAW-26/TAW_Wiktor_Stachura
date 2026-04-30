@@ -1,37 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/app/components/ui/LoadingSpinner";
 import ErrorState from "@/app/components/ui/ErrorState";
 import EmptyState from "@/app/components/ui/EmptyState";
-
-type Facility = {
-  id: number;
-  name: string;
-  description: string | null;
-  openTime: string;
-  closeTime: string;
-  createdAt: string;
-};
-
-type Reservation = {
-  id: number;
-  facilityId: number;
-  userId: number;
-  startTime: string;
-  endTime: string;
-  status: "ACTIVE" | "CANCELLED_BY_USER" | "CANCELLED_BY_ADMIN";
-  createdAt: string;
-  user?: { email: string };
-  facility?: { name: string };
-};
+import { useAuth } from "@/app/hooks/useAuth";
+import { useFacilities } from "@/app/hooks/useFacilities";
+import { useReservations } from "@/app/hooks/useReservations";
+import { facilitiesApi, type Facility } from "@/app/lib/api-client";
 
 type Tab = "facilities" | "reservations";
-
-function getToken() {
-  return typeof window !== "undefined" ? localStorage.getItem("sb_token") : null;
-}
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("pl-PL", {
@@ -45,14 +24,16 @@ function formatDateTime(iso: string) {
 
 export default function AdminPage() {
   const router = useRouter();
+  const { auth } = useAuth();
   const [tab, setTab] = useState<Tab>("facilities");
 
-  // Auth guard
   useEffect(() => {
+    // Only redirect if auth is explicitly resolved to null or non-admin. 
+    // This simple check works because localStorage is synchronous.
     const stored = localStorage.getItem("sb_auth");
     if (!stored) { router.push("/login"); return; }
-    const auth = JSON.parse(stored);
-    if (auth.role !== "ADMIN") { router.push("/dashboard"); }
+    const authData = JSON.parse(stored);
+    if (authData.role !== "ADMIN") { router.push("/dashboard"); }
   }, [router]);
 
   return (
@@ -91,9 +72,7 @@ export default function AdminPage() {
 
 /* ─── Facilities Tab ─────────────────────────────────────────── */
 function AdminFacilitiesTab() {
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { facilities, loading, error, refetch } = useFacilities();
   const [showForm, setShowForm] = useState(false);
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -101,22 +80,6 @@ function AdminFacilitiesTab() {
   const [formData, setFormData] = useState({ name: "", description: "", openTime: "08:00", closeTime: "22:00" });
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
-
-  const fetchFacilities = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/facilities");
-      if (!res.ok) throw new Error("Nie udało się pobrać boisk.");
-      setFacilities(await res.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Błąd serwera.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchFacilities(); }, [fetchFacilities]);
 
   const openAdd = () => {
     setEditingFacility(null);
@@ -137,20 +100,15 @@ function AdminFacilitiesTab() {
     setFormLoading(true);
     setFormError(null);
     try {
-      const token = getToken();
-      const url = editingFacility ? `/api/facilities/${editingFacility.id}` : "/api/facilities";
-      const method = editingFacility ? "PUT" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Błąd zapisu.");
+      if (editingFacility) {
+        await facilitiesApi.update(editingFacility.id, formData);
+      } else {
+        await facilitiesApi.create(formData);
+      }
       setShowForm(false);
-      fetchFacilities();
+      refetch();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Błąd.");
+      setFormError(err instanceof Error ? err.message : "Błąd zapisu.");
     } finally {
       setFormLoading(false);
     }
@@ -160,15 +118,10 @@ function AdminFacilitiesTab() {
     if (!confirm(`Usunąć boisko "${name}"? Wszystkie rezerwacje zostaną usunięte.`)) return;
     setDeletingId(id);
     try {
-      const token = getToken();
-      const res = await fetch(`/api/facilities/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Nie udało się usunąć.");
-      setFacilities((prev) => prev.filter((f) => f.id !== id));
+      await facilitiesApi.delete(id);
+      refetch();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Błąd.");
+      alert(err instanceof Error ? err.message : "Błąd usunięcia.");
     } finally {
       setDeletingId(null);
     }
@@ -247,7 +200,7 @@ function AdminFacilitiesTab() {
 
       {/* States */}
       {loading && <LoadingSpinner message="Ładowanie boisk..." />}
-      {!loading && error && <ErrorState message={error} onRetry={fetchFacilities} />}
+      {!loading && error && <ErrorState message={error} onRetry={refetch} />}
       {!loading && !error && facilities.length === 0 && (
         <EmptyState icon="🏟" title="Brak boisk" description="Dodaj pierwsze boisko używając przycisku powyżej." />
       )}
@@ -309,52 +262,32 @@ function AdminFacilitiesTab() {
 
 /* ─── Reservations Tab ───────────────────────────────────────── */
 function AdminReservationsTab() {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { reservations, loading, error, refetch, cancelReservation, hardDeleteReservation } = useReservations();
   const [cancellingId, setCancellingId] = useState<number | null>(null);
-
-  const fetchReservations = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = getToken();
-      const res = await fetch("/api/reservations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Nie udało się pobrać rezerwacji.");
-      setReservations(await res.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Błąd serwera.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchReservations(); }, [fetchReservations]);
 
   const handleCancel = async (id: number) => {
     if (!confirm("Anulować tę rezerwację jako administrator?")) return;
     setCancellingId(id);
     try {
-      const token = getToken();
-      const res = await fetch(`/api/reservations/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Nie udało się anulować.");
-      setReservations((prev) =>
-        prev.map((r) => r.id === id ? { ...r, status: "CANCELLED_BY_ADMIN" } : r)
-      );
+      await cancelReservation(id);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Błąd.");
+      alert(err instanceof Error ? err.message : "Błąd anulowania.");
     } finally {
       setCancellingId(null);
     }
   };
+  
+  const handleHardDelete = async (id: number) => {
+      if (!confirm("Całkowicie usunąć rezerwację z bazy? Ta operacja jest nieodwracalna.")) return;
+      try {
+        await hardDeleteReservation(id);
+      } catch (err) {
+          alert(err instanceof Error ? err.message : "Błąd usuwania.");
+      }
+  }
 
   if (loading) return <LoadingSpinner message="Ładowanie rezerwacji..." />;
-  if (error) return <ErrorState message={error} onRetry={fetchReservations} />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (reservations.length === 0) return (
     <EmptyState icon="📅" title="Brak rezerwacji" description="W systemie nie ma jeszcze żadnych rezerwacji." />
   );
@@ -393,16 +326,22 @@ function AdminReservationsTab() {
                   </span>
                 </td>
                 <td>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
                     {r.status === "ACTIVE" && (
                       <button
-                        className="btn btn-danger btn-sm"
+                        className="btn btn-secondary btn-sm"
                         onClick={() => handleCancel(r.id)}
                         disabled={cancellingId === r.id}
                       >
-                        {cancellingId === r.id ? "..." : "✕ Anuluj"}
+                        {cancellingId === r.id ? "..." : "Anuluj"}
                       </button>
                     )}
+                    <button 
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleHardDelete(r.id)}
+                    >
+                        Usuń
+                    </button>
                   </div>
                 </td>
               </tr>
