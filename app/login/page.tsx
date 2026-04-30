@@ -2,45 +2,20 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/hooks/useAuth";
 
 export default function LoginPage() {
-  const router = useRouter();
+  const { login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Logowanie nieudane.");
-      }
-
-      localStorage.setItem("sb_token", data.token);
-      localStorage.setItem(
-        "sb_auth",
-        JSON.stringify({ email: data.email, role: data.role })
-      );
-      window.dispatchEvent(new Event("sb_auth_change"));
-      router.push(data.role === "ADMIN" ? "/admin" : "/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
-    } finally {
-      setLoading(false);
+      await login(email, password);
+    } catch {
+      // Error is handled in the hook
     }
   };
 

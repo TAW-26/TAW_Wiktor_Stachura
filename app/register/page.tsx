@@ -2,70 +2,36 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/hooks/useAuth";
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const { register, loading, error: authError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const error = localError || authError;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setLocalError(null);
 
     if (password !== confirm) {
-      setError("Hasła nie są identyczne.");
+      setLocalError("Hasła nie są identyczne.");
       return;
     }
 
     if (password.length < 8) {
-      setError("Hasło musi mieć co najmniej 8 znaków.");
+      setLocalError("Hasło musi mieć co najmniej 8 znaków.");
       return;
     }
 
-    setLoading(true);
-
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Rejestracja nieudana.");
-      }
-
-      // Auto-login after register
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const loginData = await loginRes.json();
-
-      if (loginRes.ok) {
-        localStorage.setItem("sb_token", loginData.token);
-        localStorage.setItem(
-          "sb_auth",
-          JSON.stringify({ email: loginData.email, role: loginData.role })
-        );
-        window.dispatchEvent(new Event("sb_auth_change"));
-        router.push("/dashboard");
-      } else {
-        router.push("/login");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
-    } finally {
-      setLoading(false);
+      await register(email, password);
+    } catch {
+      // Error handled in hook
     }
   };
 
@@ -89,7 +55,7 @@ export default function RegisterPage() {
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <Link
             href="/"
-            style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", marginBottom: "1.5rem" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", marginBottom: "1.5rem", textDecoration: "none" }}
           >
             <span style={{ fontSize: "1.5rem" }}>⚡</span>
             <span className="gradient-text" style={{ fontWeight: 800, fontSize: "1.25rem" }}>
