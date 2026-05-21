@@ -44,4 +44,4 @@ yarn-error.log*
 *.db-journal
 /app/generated/prisma
 
-*.pdf
+*.pdf 
