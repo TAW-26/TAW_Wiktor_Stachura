@@ -14,8 +14,6 @@ export default function Navbar() {
   const [auth, setAuth] = useState<AuthState>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [menuPath, setMenuPath] = useState(pathname);
-  const [dropdownPath, setDropdownPath] = useState(pathname);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,15 +41,17 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setMenuOpen(false);
+    setDropdownOpen(false);
+  }, [pathname]);
+
   const handleLogout = () => {
     localStorage.removeItem("sb_auth");
     localStorage.removeItem("sb_token");
     window.dispatchEvent(new Event("sb_auth_change"));
     setDropdownOpen(false);
   };
-
-  const isMenuOpen = menuOpen && menuPath === pathname;
-  const isDropdownOpen = dropdownOpen && dropdownPath === pathname;
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -67,6 +67,7 @@ export default function Navbar() {
           height: "100%",
         }}
       >
+        {/* Logo */}
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span style={{ fontSize: "1.5rem" }}>⚡</span>
           <span
@@ -77,6 +78,7 @@ export default function Navbar() {
           </span>
         </Link>
 
+        {/* Desktop Nav */}
         <div
           className="desktop-nav"
           style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
@@ -98,14 +100,12 @@ export default function Navbar() {
           )}
         </div>
 
+        {/* Auth / User area */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           {auth ? (
             <div style={{ position: "relative" }} ref={dropdownRef}>
               <button
-                onClick={() => {
-                  setDropdownPath(pathname);
-                  setDropdownOpen((v) => !v);
-                }}
+                onClick={() => setDropdownOpen((v) => !v)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -144,7 +144,7 @@ export default function Navbar() {
                 <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>▼</span>
               </button>
 
-              {isDropdownOpen && (
+              {dropdownOpen && (
                 <div
                   className="animate-fade-in-fast"
                   style={{
@@ -230,12 +230,10 @@ export default function Navbar() {
             </>
           )}
 
+          {/* Mobile hamburger */}
           <button
             className="mobile-menu-btn"
-            onClick={() => {
-              setMenuPath(pathname);
-              setMenuOpen((v) => !v);
-            }}
+            onClick={() => setMenuOpen((v) => !v)}
             aria-label="Toggle menu"
             style={{
               display: "none",
@@ -252,7 +250,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {isMenuOpen && (
+      {/* Mobile menu */}
+      {menuOpen && (
         <div
           className="animate-fade-in-fast"
           style={{

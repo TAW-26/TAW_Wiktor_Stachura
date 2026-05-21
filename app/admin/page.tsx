@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/app/components/ui/LoadingSpinner";
 import ErrorState from "@/app/components/ui/ErrorState";
 import EmptyState from "@/app/components/ui/EmptyState";
+import { useAuth } from "@/app/hooks/useAuth";
 import { useFacilities } from "@/app/hooks/useFacilities";
 import { useReservations } from "@/app/hooks/useReservations";
 import { facilitiesApi, type Facility } from "@/app/lib/api-client";
@@ -23,18 +24,16 @@ function formatDateTime(iso: string) {
 
 export default function AdminPage() {
   const router = useRouter();
+  const { auth } = useAuth();
   const [tab, setTab] = useState<Tab>("facilities");
 
   useEffect(() => {
+    // Only redirect if auth is explicitly resolved to null or non-admin. 
+    // This simple check works because localStorage is synchronous.
     const stored = localStorage.getItem("sb_auth");
-    if (!stored) {
-      router.push("/login");
-      return;
-    }
+    if (!stored) { router.push("/login"); return; }
     const authData = JSON.parse(stored);
-    if (authData.role !== "ADMIN") {
-      router.push("/dashboard");
-    }
+    if (authData.role !== "ADMIN") { router.push("/dashboard"); }
   }, [router]);
 
   return (
@@ -48,6 +47,7 @@ export default function AdminPage() {
           <p>Zarządzaj obiektami i rezerwacjami w systemie.</p>
         </div>
 
+        {/* Tabs */}
         <div className="tabs animate-fade-in" style={{ marginBottom: "2rem", maxWidth: 400 }}>
           <button
             className={`tab-btn ${tab === "facilities" ? "active" : ""}`}
@@ -70,6 +70,7 @@ export default function AdminPage() {
   );
 }
 
+/* ─── Facilities Tab ─────────────────────────────────────────── */
 function AdminFacilitiesTab() {
   const { facilities, loading, error, refetch } = useFacilities();
   const [showForm, setShowForm] = useState(false);

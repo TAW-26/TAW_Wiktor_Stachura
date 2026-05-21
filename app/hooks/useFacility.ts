@@ -25,11 +25,8 @@ export function useFacility(id: number) {
     loadingSlots: false,
   });
 
-  const fetchFacility = useCallback(async (showLoading = true) => {
-    if (showLoading) {
-      setState((s) => ({ ...s, loadingFacility: true, facilityError: null }));
-    }
-
+  const fetchFacility = useCallback(async () => {
+    setState((s) => ({ ...s, loadingFacility: true, facilityError: null }));
     try {
       const data = await facilitiesApi.get(id);
       setState((s) => ({ ...s, facility: data, loadingFacility: false }));
@@ -54,14 +51,12 @@ export function useFacility(id: number) {
   );
 
   useEffect(() => {
-    queueMicrotask(() => {
-      void fetchFacility(false);
-    });
+    fetchFacility();
   }, [fetchFacility]);
 
   return {
     ...state,
-    refetchFacility: () => fetchFacility(true),
+    refetchFacility: fetchFacility,
     fetchAvailability,
   };
 }
