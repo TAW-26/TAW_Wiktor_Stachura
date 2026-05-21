@@ -1,6 +1,14 @@
+import { serialize, deserialize } from "node:v8";
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+
+if (typeof globalThis.structuredClone !== "function") {
+  globalThis.structuredClone = (value) => deserialize(serialize(value));
+}
+
+const [{ default: nextVitals }, { default: nextTs }] = await Promise.all([
+  import("eslint-config-next/core-web-vitals"),
+  import("eslint-config-next/typescript"),
+]);
 
 const eslintConfig = defineConfig([
   ...nextVitals,

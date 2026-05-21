@@ -16,8 +16,11 @@ export function useFacilities() {
     error: null,
   });
 
-  const fetchFacilities = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }));
+  const fetchFacilities = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setState((s) => ({ ...s, loading: true, error: null }));
+    }
+
     try {
       const data = await facilitiesApi.list();
       setState({ facilities: data, loading: false, error: null });
@@ -28,8 +31,10 @@ export function useFacilities() {
   }, []);
 
   useEffect(() => {
-    fetchFacilities();
+    queueMicrotask(() => {
+      void fetchFacilities(false);
+    });
   }, [fetchFacilities]);
 
-  return { ...state, refetch: fetchFacilities };
+  return { ...state, refetch: () => fetchFacilities(true) };
 }
