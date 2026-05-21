@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import SkeletonCard from "@/app/components/ui/SkeletonCard";
 import ErrorState from "@/app/components/ui/ErrorState";
@@ -11,18 +11,21 @@ import type { Facility } from "@/app/lib/api-client";
 export default function FacilitiesPage() {
   const { facilities, loading, error, refetch } = useFacilities();
   const [search, setSearch] = useState("");
+  const [filtered, setFiltered] = useState<Facility[]>([]);
 
-  const filtered = useMemo(() => {
+  useEffect(() => {
     if (!search.trim()) {
-      return facilities;
+      setFiltered(facilities);
+    } else {
+      const q = search.toLowerCase();
+      setFiltered(
+        facilities.filter(
+          (f) =>
+            f.name.toLowerCase().includes(q) ||
+            (f.description ?? "").toLowerCase().includes(q)
+        )
+      );
     }
-
-    const query = search.toLowerCase();
-    return facilities.filter(
-      (facility) =>
-        facility.name.toLowerCase().includes(query) ||
-        (facility.description ?? "").toLowerCase().includes(query)
-    );
   }, [search, facilities]);
 
   return (

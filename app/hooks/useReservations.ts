@@ -21,11 +21,8 @@ export function useReservations() {
     error: null,
   });
 
-  const fetchReservations = useCallback(async (showLoading = true) => {
-    if (showLoading) {
-      setState((s) => ({ ...s, loading: true, error: null }));
-    }
-
+  const fetchReservations = useCallback(async () => {
+    setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const data = await reservationsApi.list();
       setState({ reservations: data, loading: false, error: null });
@@ -36,9 +33,7 @@ export function useReservations() {
   }, []);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      void fetchReservations(false);
-    });
+    fetchReservations();
   }, [fetchReservations]);
 
   const createReservation = async (dto: CreateReservationDto): Promise<Reservation> => {
@@ -71,7 +66,7 @@ export function useReservations() {
 
   return {
     ...state,
-    refetch: () => fetchReservations(true),
+    refetch: fetchReservations,
     createReservation,
     cancelReservation,
     hardDeleteReservation,
