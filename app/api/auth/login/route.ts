@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loginUser } from "@/lib/server/auth";
-import { handleRouteError, parseJsonBody } from "@/lib/server/http";
+import { parseJsonBody, instrument } from "@/lib/server/http";
+import { withTiming } from "@/lib/server/monitoring";
 
 type LoginDto = {
   email: string;
