@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DomainError, isDomainError } from "./errors";
+import { captureException } from "./monitoring";
 
 export const toIntId = (value: string): number => {
   const parsed = Number.parseInt(value, 10);
@@ -31,7 +32,12 @@ export const handleRouteError = (error: unknown) => {
   if (isDomainError(error)) {
     return NextResponse.json({ error: error.message }, { status: error.statusCode });
   }
-
+  // capture to monitoring (Sentry or file fallback)
+  try {
+    captureException(error);
+  } catch (e) {
+    // ignore
+  }
   console.error(error);
   return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 };

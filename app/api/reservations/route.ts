@@ -6,6 +6,7 @@ import {
   listUserReservations,
 } from "@/lib/server/reservation-service";
 import { handleRouteError, parseJsonBody, toDate } from "@/lib/server/http";
+import { withTiming } from "@/lib/server/monitoring";
 
 type CreateReservationDto = {
   facilityId: number;
@@ -34,12 +35,17 @@ export async function POST(request: Request) {
     const auth = requireAuth(request);
     const body = await parseJsonBody<CreateReservationDto>(request);
 
-    const reservation = await createReservation({
-      userId: auth.id,
-      facilityId: body.facilityId,
-      startTime: toDate(body.startTime, "startTime"),
-      endTime: toDate(body.endTime, "endTime"),
-    });
+    const reservation = await withTiming(
+      "reservations.create",
+      () =>
+        createReservation({
+          userId: auth.id,
+          facilityId: body.facilityId,
+          startTime: toDate(body.startTime, "startTime"),
+          endTime: toDate(body.endTime, "endTime"),
+        }),
+      { userId: auth.id, facilityId: body.facilityId },
+    );
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error) {
