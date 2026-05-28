@@ -20,6 +20,7 @@ export async function GET(request: Request, context: RouteContext) {
     const availability = await getFacilityDailyAvailability(toIntId(id), date);
     return NextResponse.json(availability, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/facilities/:id/availability", method: "GET", params: { id: _id } });
   }
 }

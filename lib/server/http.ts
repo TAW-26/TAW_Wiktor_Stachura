@@ -28,13 +28,13 @@ export const parseJsonBody = async <T>(request: Request): Promise<T> => {
   }
 };
 
-export const handleRouteError = (error: unknown) => {
+export const handleRouteError = (error: unknown, context?: Record<string, unknown>) => {
   if (isDomainError(error)) {
     return NextResponse.json({ error: error.message }, { status: error.statusCode });
   }
   // capture to monitoring (Sentry or file fallback)
   try {
-    captureException(error);
+    captureException(error, context);
   } catch (e) {
     // ignore
   }

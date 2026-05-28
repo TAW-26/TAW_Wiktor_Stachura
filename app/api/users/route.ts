@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const users = await listUsers();
     return NextResponse.json(users, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(error, { route: "/api/users", method: "GET" });
   }
 }
 
@@ -26,6 +26,6 @@ export async function POST(request: Request) {
     const user = await createUser(body);
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(error, { route: "/api/users", method: "POST" });
   }
 }

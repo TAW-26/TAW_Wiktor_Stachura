@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const reservations = await listUserReservations(auth.id);
     return NextResponse.json(reservations, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(error, { route: "/api/reservations", method: "GET" });
   }
 }
 
@@ -49,6 +49,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(error, { route: "/api/reservations", method: "POST" });
   }
 }

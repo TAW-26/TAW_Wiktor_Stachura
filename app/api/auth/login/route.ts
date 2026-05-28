@@ -14,6 +14,6 @@ export async function POST(request: Request) {
     const result = await withTiming("auth.login", () => loginUser(body.email, body.password), { email: body.email });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(error, { route: "/api/auth/login", method: "POST" });
   }
 }

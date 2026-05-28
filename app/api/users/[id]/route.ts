@@ -20,7 +20,8 @@ export async function GET(_request: Request, context: RouteContext) {
     const user = await getUserById(targetId);
     return NextResponse.json(user, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/users/:id", method: "GET", params: { id: _id } });
   }
 }
 
@@ -47,7 +48,8 @@ export async function PUT(request: Request, context: RouteContext) {
     const user = await updateUser(targetId, body);
     return NextResponse.json(user, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/users/:id", method: "PUT", params: { id: _id } });
   }
 }
 
@@ -62,6 +64,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     await deleteUser(toIntId(id));
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/users/:id", method: "DELETE", params: { id: _id } });
   }
 }

@@ -15,7 +15,7 @@ export async function GET() {
     const facilities = await listFacilities();
     return NextResponse.json(facilities, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(error, { route: "/api/facilities", method: "GET" });
   }
 }
 
@@ -26,6 +26,6 @@ export async function POST(request: Request) {
     const facility = await createFacility(body);
     return NextResponse.json(facility, { status: 201 });
   } catch (error) {
-    return handleRouteError(error);
+    return handleRouteError(error, { route: "/api/facilities", method: "POST" });
   }
 }

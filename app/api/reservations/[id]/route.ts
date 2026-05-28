@@ -24,7 +24,8 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json(reservation, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/reservations/:id", method: "GET", params: { id: _id } });
   }
 }
 
@@ -49,7 +50,8 @@ export async function PUT(request: Request, context: RouteContext) {
 
     return NextResponse.json(reservation, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/reservations/:id", method: "PUT", params: { id: _id } });
   }
 }
 
@@ -73,6 +75,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     const reservation = await cancelReservation(reservationId, auth.role, auth.id);
     return NextResponse.json(reservation, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/reservations/:id", method: "DELETE", params: { id: _id } });
   }
 }

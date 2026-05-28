@@ -17,7 +17,8 @@ export async function GET(_request: Request, context: RouteContext) {
     const facility = await getFacilityById(toIntId(id));
     return NextResponse.json(facility, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/facilities/:id", method: "GET", params: { id: _id } });
   }
 }
 
@@ -35,7 +36,8 @@ export async function PUT(request: Request, context: RouteContext) {
     const facility = await updateFacility(toIntId(id), body);
     return NextResponse.json(facility, { status: 200 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/facilities/:id", method: "PUT", params: { id: _id } });
   }
 }
 
@@ -46,6 +48,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     await deleteFacility(toIntId(id));
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return handleRouteError(error);
+    const { id: _id } = await context.params;
+    return handleRouteError(error, { route: "/api/facilities/:id", method: "DELETE", params: { id: _id } });
   }
 }
