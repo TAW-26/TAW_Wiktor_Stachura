@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createJwtForUser, registerUser } from "@/lib/server/auth";
-import { handleRouteError, parseJsonBody } from "@/lib/server/http";
+import { parseJsonBody, instrument } from "@/lib/server/http";
 
 type RegisterDto = {
   email: string;
@@ -8,7 +8,7 @@ type RegisterDto = {
 };
 
 export async function POST(request: Request) {
-  try {
+  return instrument(request, "/api/auth/register", async () => {
     const body = await parseJsonBody<RegisterDto>(request);
     const user = await registerUser(body);
 
@@ -19,7 +19,5 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ token, user }, { status: 201 });
-  } catch (error) {
-    return handleRouteError(error, { route: "/api/auth/register", method: "POST" });
-  }
+  });
 }

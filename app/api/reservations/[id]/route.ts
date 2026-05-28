@@ -6,16 +6,16 @@ import {
   getReservationById,
   updateReservationTime,
 } from "@/lib/server/reservation-service";
-import { handleRouteError, parseJsonBody, toDate, toIntId } from "@/lib/server/http";
+import { parseJsonBody, toDate, toIntId, instrument } from "@/lib/server/http";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
 export async function GET(_request: Request, context: RouteContext) {
-  try {
+  const { id } = await context.params;
+  return instrument(_request, "/api/reservations/:id", async () => {
     const auth = requireAuth(_request);
-    const { id } = await context.params;
     const reservation = await getReservationById(toIntId(id));
 
     if (auth.role !== "ADMIN" && reservation.userId !== auth.id) {
@@ -23,16 +23,13 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     return NextResponse.json(reservation, { status: 200 });
-  } catch (error) {
-    const { id: _id } = await context.params;
-    return handleRouteError(error, { route: "/api/reservations/:id", method: "GET", params: { id: _id } });
-  }
+  }, { params: { id } });
 }
 
 export async function PUT(request: Request, context: RouteContext) {
-  try {
+  const { id } = await context.params;
+  return instrument(request, "/api/reservations/:id", async () => {
     const auth = requireAuth(request);
-    const { id } = await context.params;
     const reservationId = toIntId(id);
     const existingReservation = await getReservationById(reservationId);
 
@@ -49,16 +46,13 @@ export async function PUT(request: Request, context: RouteContext) {
     );
 
     return NextResponse.json(reservation, { status: 200 });
-  } catch (error) {
-    const { id: _id } = await context.params;
-    return handleRouteError(error, { route: "/api/reservations/:id", method: "PUT", params: { id: _id } });
-  }
+  }, { params: { id } });
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  try {
+  const { id } = await context.params;
+  return instrument(request, "/api/reservations/:id", async () => {
     const auth = requireAuth(request);
-    const { id } = await context.params;
     const reservationId = toIntId(id);
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get("mode");
@@ -74,8 +68,5 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     const reservation = await cancelReservation(reservationId, auth.role, auth.id);
     return NextResponse.json(reservation, { status: 200 });
-  } catch (error) {
-    const { id: _id } = await context.params;
-    return handleRouteError(error, { route: "/api/reservations/:id", method: "DELETE", params: { id: _id } });
-  }
+  }, { params: { id } });
 }

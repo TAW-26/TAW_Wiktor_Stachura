@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getFacilityDailyAvailability } from "@/lib/server/facility-service";
-import { handleRouteError, toIntId } from "@/lib/server/http";
+import { toIntId, instrument } from "@/lib/server/http";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
 export async function GET(request: Request, context: RouteContext) {
-  try {
-    const { id } = await context.params;
+  const { id } = await context.params;
+  return instrument(request, "/api/facilities/:id/availability", async () => {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get("date");
     const date = dateParam ? new Date(dateParam) : new Date();
@@ -19,8 +19,5 @@ export async function GET(request: Request, context: RouteContext) {
 
     const availability = await getFacilityDailyAvailability(toIntId(id), date);
     return NextResponse.json(availability, { status: 200 });
-  } catch (error) {
-    const { id: _id } = await context.params;
-    return handleRouteError(error, { route: "/api/facilities/:id/availability", method: "GET", params: { id: _id } });
-  }
+  }, { params: { id } });
 }

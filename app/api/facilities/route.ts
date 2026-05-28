@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
 import { createFacility, listFacilities } from "@/lib/server/facility-service";
-import { handleRouteError, parseJsonBody } from "@/lib/server/http";
+import { parseJsonBody, instrument } from "@/lib/server/http";
 
 type CreateFacilityDto = {
   name: string;
@@ -11,21 +11,17 @@ type CreateFacilityDto = {
 };
 
 export async function GET() {
-  try {
+  return instrument(undefined, "/api/facilities", async () => {
     const facilities = await listFacilities();
     return NextResponse.json(facilities, { status: 200 });
-  } catch (error) {
-    return handleRouteError(error, { route: "/api/facilities", method: "GET" });
-  }
+  });
 }
 
 export async function POST(request: Request) {
-  try {
+  return instrument(request, "/api/facilities", async () => {
     requireAdmin(request);
     const body = await parseJsonBody<CreateFacilityDto>(request);
     const facility = await createFacility(body);
     return NextResponse.json(facility, { status: 201 });
-  } catch (error) {
-    return handleRouteError(error, { route: "/api/facilities", method: "POST" });
-  }
+  });
 }

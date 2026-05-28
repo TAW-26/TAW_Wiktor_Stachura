@@ -5,7 +5,7 @@ import {
   listAllReservations,
   listUserReservations,
 } from "@/lib/server/reservation-service";
-import { handleRouteError, parseJsonBody, toDate } from "@/lib/server/http";
+import { parseJsonBody, toDate, instrument } from "@/lib/server/http";
 import { withTiming } from "@/lib/server/monitoring";
 
 type CreateReservationDto = {
@@ -15,7 +15,7 @@ type CreateReservationDto = {
 };
 
 export async function GET(request: Request) {
-  try {
+  return instrument(request, "/api/reservations", async () => {
     const auth = requireAuth(request);
 
     if (auth.role === "ADMIN") {
@@ -25,13 +25,11 @@ export async function GET(request: Request) {
 
     const reservations = await listUserReservations(auth.id);
     return NextResponse.json(reservations, { status: 200 });
-  } catch (error) {
-    return handleRouteError(error, { route: "/api/reservations", method: "GET" });
-  }
+  });
 }
 
 export async function POST(request: Request) {
-  try {
+  return instrument(request, "/api/reservations", async () => {
     const auth = requireAuth(request);
     const body = await parseJsonBody<CreateReservationDto>(request);
 
@@ -48,7 +46,5 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json(reservation, { status: 201 });
-  } catch (error) {
-    return handleRouteError(error, { route: "/api/reservations", method: "POST" });
-  }
+  }, { user: true });
 }
