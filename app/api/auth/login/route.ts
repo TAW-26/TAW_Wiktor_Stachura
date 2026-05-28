@@ -8,11 +8,9 @@ type LoginDto = {
 };
 
 export async function POST(request: Request) {
-  try {
+  return instrument(request, "/api/auth/login", async () => {
     const body = await parseJsonBody<LoginDto>(request);
-    const result = await loginUser(body.email, body.password);
+    const result = await withTiming("auth.login", () => loginUser(body.email, body.password), { email: body.email });
     return NextResponse.json(result, { status: 200 });
-  } catch (error) {
-    return handleRouteError(error);
-  }
+  }, { safeEmail: true });
 }
