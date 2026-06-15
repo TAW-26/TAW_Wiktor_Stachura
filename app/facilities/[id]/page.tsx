@@ -18,18 +18,21 @@ function generateSlots(openTime: string, closeTime: string, date: string): Avail
   const [closeH] = closeTime.split(":").map(Number);
   for (let h = openH; h < closeH; h++) {
     const pad = (n: number) => String(n).padStart(2, "0");
+    // No trailing 'Z' — local time, not UTC, so getHours() and display stay in sync
     slots.push({
-      start: `${date}T${pad(h)}:00:00.000Z`,
-      end: `${date}T${pad(h + 1)}:00:00.000Z`,
+      start: `${date}T${pad(h)}:00:00`,
+      end:   `${date}T${pad(h + 1)}:00:00`,
       available: true,
     });
   }
   return slots;
 }
 
-function formatSlotTime(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+function formatSlotTime(isoOrLocal: string): string {
+  // Works for both "2026-06-15T16:00:00" (local) and "2026-06-15T16:00:00.000Z" (UTC)
+  // Parse hours/minutes directly from the string to avoid timezone offset from getHours()
+  const timePart = isoOrLocal.slice(11, 16); // "HH:MM"
+  return timePart;
 }
 
 export default function FacilityDetailPage() {
@@ -71,12 +74,9 @@ export default function FacilityDetailPage() {
 
   const handleSlotClick = (slot: AvailabilitySlot) => {
     if (!slot.available) return;
-    const s = new Date(slot.start);
-    const e = new Date(slot.end);
-    const toLocalTime = (d: Date) =>
-      `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    setStartTime(toLocalTime(s));
-    setEndTime(toLocalTime(e));
+    // Read HH:MM directly from the ISO string (chars 11-16) — no timezone conversion
+    setStartTime(slot.start.slice(11, 16));
+    setEndTime(slot.end.slice(11, 16));
     setBookingError(null);
     setBookingSuccess(false);
   };
@@ -104,7 +104,8 @@ export default function FacilityDetailPage() {
       setBookingSuccess(true);
       setStartTime("");
       setEndTime("");
-      fetchAvailability(date);
+      setDisplaySlots([]);  // clear immediately so user sees loading state
+      await fetchAvailability(date);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : "Błąd serwera.");
       setBookingError(msg);
@@ -238,11 +239,33 @@ export default function FacilityDetailPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                 <div className="form-group">
                   <label htmlFor="booking-start" className="form-label">Godzina od</label>
-                  <input id="booking-start" type="time" className="form-input" value={startTime} onChange={(e) => setStartTime(e.target.value)} min={facility.openTime} max={facility.closeTime} required />
+                  <input
+                    id="booking-start"
+                    type="text"
+                    inputMode="numeric"
+                    className="form-input"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    placeholder={facility.openTime}
+                    pattern="^([01]\d|2[0-3]):[0-5]\d$"
+                    title="Format: HH:MM (np. 14:00)"
+                    required
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="booking-end" className="form-label">Godzina do</label>
-                  <input id="booking-end" type="time" className="form-input" value={endTime} onChange={(e) => setEndTime(e.target.value)} min={facility.openTime} max={facility.closeTime} required />
+                  <input
+                    id="booking-end"
+                    type="text"
+                    inputMode="numeric"
+                    className="form-input"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    placeholder={facility.closeTime}
+                    pattern="^([01]\d|2[0-3]):[0-5]\d$"
+                    title="Format: HH:MM (np. 15:00)"
+                    required
+                  />
                 </div>
               </div>
 

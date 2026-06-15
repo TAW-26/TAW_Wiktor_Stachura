@@ -33,7 +33,7 @@ export function useAuth() {
 
   const persistAuth = (data: AuthResponse) => {
     localStorage.setItem("sb_token", data.token);
-    localStorage.setItem("sb_auth", JSON.stringify({ email: data.email, role: data.role }));
+    localStorage.setItem("sb_auth", JSON.stringify({ email: data.user.email, role: data.user.role }));
     window.dispatchEvent(new Event("sb_auth_change"));
   };
 
@@ -43,7 +43,7 @@ export function useAuth() {
     try {
       const data = await authApi.login(email, password);
       persistAuth(data);
-      router.push(data.role === "ADMIN" ? "/admin" : "/dashboard");
+      router.push(data.user.role === "ADMIN" ? "/admin" : "/dashboard");
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Błąd logowania.";
       setError(msg);

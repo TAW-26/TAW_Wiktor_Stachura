@@ -16,6 +16,7 @@ function formatDateTime(iso: string): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }
 
@@ -187,7 +188,7 @@ function ReservationCard({
             {reservation.facility?.name ?? `Obiekt #${reservation.facilityId}`}
           </Link>
           <p style={{ margin: "0.2rem 0 0.1rem", fontSize: "0.875rem", color: "var(--text-secondary)" }}>
-            📅 {formatDateTime(reservation.startTime)} – {new Date(reservation.endTime).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+            📅 {formatDateTime(reservation.startTime)} – {new Date(reservation.endTime).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit", hour12: false })}
           </p>
           <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>
             Zarezerwowano: {formatDate(reservation.createdAt)}

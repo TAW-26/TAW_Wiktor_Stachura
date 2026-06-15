@@ -18,6 +18,7 @@ function formatDateTime(iso: string) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }
 
@@ -317,7 +318,7 @@ function AdminReservationsTab() {
                 <td style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
                   <span>{formatDateTime(r.startTime)}</span>
                   <br />
-                  <span style={{ color: "var(--text-muted)" }}>→ {new Date(r.endTime).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span style={{ color: "var(--text-muted)" }}>→ {new Date(r.endTime).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
                 </td>
                 <td>
                   <span className={`badge ${r.status === "ACTIVE" ? "badge-active" : "badge-cancelled"}`}>

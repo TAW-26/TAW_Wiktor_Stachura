@@ -80,8 +80,12 @@ function httpStatusMessage(status: number): string {
 
 export type AuthResponse = {
   token: string;
-  email: string;
-  role: "USER" | "ADMIN";
+  user: {
+    id: number;
+    email: string;
+    role: "USER" | "ADMIN";
+    createdAt: string;
+  };
 };
 
 export const authApi = {
