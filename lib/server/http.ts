@@ -49,7 +49,12 @@ export const handleRouteError = (error: unknown, context?: Record<string, unknow
   return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 };
 
-export const instrument = async <T>(request: Request | undefined, route: string, fn: () => Promise<T>, context?: Record<string, unknown>): Promise<T> => {
+export const instrument = async <T>(
+  request: Request | undefined,
+  route: string,
+  fn: () => Promise<T>,
+  context?: Record<string, unknown>
+): Promise<T> => {
   const start = Date.now();
   try {
     const res = await fn();
@@ -57,7 +62,11 @@ export const instrument = async <T>(request: Request | undefined, route: string,
     try { capturePerformance(route, duration, { ...(context || {}), method: request?.method }); } catch {}
     return res;
   } catch (err) {
+    const duration = Date.now() - start;
+    try { capturePerformance(route + ".error", duration, { ...(context || {}), method: request?.method }); } catch {}
     try { captureException(err, { ...(context || {}), route, method: request?.method }); } catch {}
-    throw err;
+    // Return a proper HTTP response instead of re-throwing — prevents Next.js from
+    // converting every DomainError (400/401/403/404/409) into a 500.
+    return handleRouteError(err, { route }) as unknown as T;
   }
 };
